@@ -1,31 +1,31 @@
 import java.nio.channels.SocketChannel;
 import java.nio.ByteBuffer;
 
-public class EstadoCliente {
+public class ClientState {
     
-    public enum EstadoConexao {
-        INICIAL,
-        PRONTO,
-        EM_SALA
+    public enum ConnectionState {
+        INITIAL,
+        READY,
+        IN_ROOM
     }
 
-    private EstadoConexao state;
+    private ConnectionState state;
     private String clientNickname;
     private String activeRoom;
     private final SocketChannel connection;
     private final ByteBuffer inputBuffer;
     private StringBuilder partialMessage;
 
-    public EstadoCliente(SocketChannel connection) {
+    public ClientState(SocketChannel connection) {
         this.connection = connection;
-        this.state = EstadoConexao.INICIAL;
+        this.state = ConnectionState.INITIAL;
         this.clientNickname = null;
         this.activeRoom = null;
         this.inputBuffer = ByteBuffer.allocate(2048);
         this.partialMessage = new StringBuilder();
     }
 
-    public EstadoConexao getState() {
+    public ConnectionState getState() {
         return state;
     }
 
@@ -33,23 +33,23 @@ public class EstadoCliente {
         return clientNickname;
     }
 
-    public String getCurrentRoom() {
+    public String getRoom() {
         return activeRoom;
     }
 
-    public SocketChannel getChannel() {
+    public SocketChannel getConnection() {
         return connection;
     }
 
-    public ByteBuffer getReadBuffer() {
+    public ByteBuffer getInputBuffer() {
         return inputBuffer;
     }
 
-    public StringBuilder getLineBuffer() {
+    public StringBuilder getPartialMessage() {
         return partialMessage;
     }
 
-    public void setState(EstadoConexao newState) {
+    public void setState(ConnectionState newState) {
         this.state = newState;
     }
 
@@ -57,15 +57,15 @@ public class EstadoCliente {
         this.clientNickname = nickname;
     }
 
-    public void setCurrentRoom(String room) {
+    public void setRoom(String room) {
         this.activeRoom = room;
     }
 
-    public void clearLineBuffer() {
+    public void resetPartialMessage() {
         this.partialMessage = new StringBuilder();
     }
 
-    public void setLineBuffer(StringBuilder message) {
+    public void setPartialMessage(StringBuilder message) {
         this.partialMessage = message;
     }
 
@@ -77,47 +77,49 @@ public class EstadoCliente {
         return activeRoom != null && !activeRoom.isEmpty();
     }
 
-    public boolean isInitialState() {
-        return state == EstadoConexao.INICIAL;
+    public boolean isInitial() {
+        return state == ConnectionState.INITIAL;
     }
 
-    public boolean isReadyState() {
-        return state == EstadoConexao.PRONTO;
+    public boolean isReady() {
+        return state == ConnectionState.READY;
     }
 
-    public boolean isInRoomState() {
-        return state == EstadoConexao.EM_SALA;
+    public boolean isInChatRoom() {
+        return state == ConnectionState.IN_ROOM;
     }
 
-    public boolean transitionToReady() {
-        if (state != EstadoConexao.INICIAL && state != EstadoConexao.EM_SALA) {
+    public boolean moveToReady(String nickname) {
+        if (state != ConnectionState.INITIAL) {
             return false;
         }
-        this.state = EstadoConexao.PRONTO;
+        this.clientNickname = nickname;
+        this.state = ConnectionState.READY;
         return true;
     }
 
-    public boolean transitionToInRoom() {
-        if (state != EstadoConexao.PRONTO && state != EstadoConexao.EM_SALA) {
+    public boolean joinRoom(String room) {
+        if (state != ConnectionState.READY && state != ConnectionState.IN_ROOM) {
             return false;
         }
-        this.state = EstadoConexao.EM_SALA;
+        this.activeRoom = room;
+        this.state = ConnectionState.IN_ROOM;
         return true;
     }
 
     public boolean exitRoom() {
-        if (state != EstadoConexao.EM_SALA) {
+        if (state != ConnectionState.IN_ROOM) {
             return false;
         }
         this.activeRoom = null;
-        this.state = EstadoConexao.PRONTO;
+        this.state = ConnectionState.READY;
         return true;
     }
 
     public void cleanup() {
         this.clientNickname = null;
         this.activeRoom = null;
-        this.state = EstadoConexao.INICIAL;
+        this.state = ConnectionState.INITIAL;
         clearAllBuffers();
     }
 
@@ -127,11 +129,11 @@ public class EstadoCliente {
     }
 
     public boolean canSendMessage() {
-        return isInRoomState();
+        return isInChatRoom();
     }
 
     public boolean canJoinRoom() {
-        return isReadyState() || isInRoomState();
+        return isReady() || isInChatRoom();
     }
 
     public boolean canSetNickname() {
@@ -139,7 +141,7 @@ public class EstadoCliente {
     }
 
     public String getDebugInfo() {
-        return String.format("EstadoCliente{nick=%s, state=%s, room=%s}",
+        return String.format("ClientState{nick=%s, state=%s, room=%s}",
             clientNickname != null ? clientNickname : "none",
             state,
             activeRoom != null ? activeRoom : "none");
@@ -147,7 +149,7 @@ public class EstadoCliente {
 
     @Override
     public String toString() {
-        return String.format("Cliente[%s|%s|%s]",
+        return String.format("Client[%s|%s|%s]",
             clientNickname != null ? clientNickname : "?",
             state,
             activeRoom != null ? activeRoom : "-");
