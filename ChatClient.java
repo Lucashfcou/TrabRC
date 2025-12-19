@@ -5,9 +5,9 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-public class ClienteChat {
+public class ChatClient {
 
-    JFrame frame = new JFrame("Cliente de Chat");
+    JFrame frame = new JFrame("Chat Client");
     private JTextField chatBox = new JTextField();
     private JTextArea chatArea = new JTextArea();
 
@@ -20,7 +20,7 @@ public class ClienteChat {
         chatArea.append(message);
     }
 
-    public ClienteChat(String server, int port) throws IOException {
+    public ChatClient(String server, int port) throws IOException {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
@@ -101,11 +101,11 @@ public class ClienteChat {
 
     public static void main(String[] args) throws IOException {
         if (args.length != 2) {
-            System.err.println("Uso: java ClienteChat <host> <porta>");
+            System.err.println("Uso: java ChatClient <host> <porta>");
             System.exit(1);
         }
         
-        ClienteChat client = new ClienteChat(args[0], Integer.parseInt(args[1]));
+        ChatClient client = new ChatClient(args[0], Integer.parseInt(args[1]));
         client.run();
     }
 
